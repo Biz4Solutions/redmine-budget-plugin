@@ -11,7 +11,7 @@ module TimeReportPatch
     base.class_eval do
       unloadable # Send unloadable so it will not be unloaded in development
 
-      alias_method_chain :load_available_criteria, :deliverable
+      #alias_method_chain :load_available_criteria, :deliverable
     end
 
   end

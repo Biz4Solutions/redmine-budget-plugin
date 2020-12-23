@@ -9,11 +9,12 @@ end
 require_dependency 'user'
 require_dependency 'member'
 
-class ConvertMemberRateToFullRates < ActiveRecord::Migration
+class ConvertMemberRateToFullRates < ActiveRecord::Migration[5.2]
   def self.up
     self.check_that_rate_plugin_is_installed
     
     # Add a new Rate object for each Member
+=begin
     Member.find(:all, :conditions => ['rate IS NOT NULL']).each do |member|
       say_with_time "Converting rate for #{member.user.to_s} - #{member.project.to_s}" do
         # Need to find the first date for any TimeEntries  #1924
@@ -32,7 +33,27 @@ class ConvertMemberRateToFullRates < ActiveRecord::Migration
         rate.save!
       end
     end
-    
+=end
+
+    Member.where(['rate IS NOT NULL']).each do |member|
+      say_with_time "Converting rate for #{member.user.to_s} - #{member.project.to_s}" do
+        # Need to find the first date for any TimeEntries  #1924
+        first_time_entry = TimeEntry.find(:first,
+                                          :conditions => ['project_id = (?) AND user_id = (?)', member.project_id, member.user_id],
+                                          :order => 'spent_on ASC')
+        date_in_effect = first_time_entry.spent_on if first_time_entry
+        date_in_effect ||= member.created_on
+
+        rate = Rate.new({
+                            :user => member.user,
+                            :amount => member.rate,
+                            :project => member.project,
+                            :date_in_effect => date_in_effect
+                        })
+        rate.save!
+      end
+    end
+
   end
   
   def self.down

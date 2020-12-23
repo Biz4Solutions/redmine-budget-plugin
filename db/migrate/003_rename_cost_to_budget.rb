@@ -1,4 +1,4 @@
-class RenameCostToBudget < ActiveRecord::Migration
+class RenameCostToBudget < ActiveRecord::Migration[5.2]
   def self.up
     add_column :deliverables, :budget, :decimal, :precision => 15, :scale => 2
     remove_column :deliverables, :cost

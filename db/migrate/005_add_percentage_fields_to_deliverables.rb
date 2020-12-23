@@ -1,4 +1,4 @@
-class AddPercentageFieldsToDeliverables < ActiveRecord::Migration
+class AddPercentageFieldsToDeliverables < ActiveRecord::Migration[5.2]
   def self.up
     add_column :deliverables, :overhead_percent, :integer
     add_column :deliverables, :materials_percent, :integer

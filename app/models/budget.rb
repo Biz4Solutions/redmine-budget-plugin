@@ -33,7 +33,7 @@ class Budget
   
   # Deliverables assigned to this +Budget+
   def deliverables
-    return Deliverable.find_all_by_project_id(@project.id)
+    return Deliverable.where(["project_id = ?",@project.id])
   end
   
   # Total budget all of the deliverables
@@ -109,18 +109,19 @@ class Budget
   
   # Dollar amount of time that has been logged to the project itself
   def amount_missing_on_issues
-    time_logs = TimeEntry.find_all_by_project_id_and_issue_id(self.project.id, nil)
-
+    #time_logs = TimeEntry.find_all_by_project_id_and_issue_id(self.project.id, nil)
+    time_logs = TimeEntry.where(["project_id = ? and issue_id = ?", self.project.id, nil])
     return time_logs.collect(&:cost).sum
   end
   
   # Dollar amount of time that has been logged to issues that are not assigned to deliverables
   def amount_missing_on_deliverables
     # Bisect the issues because NOT IN isn't reliable
-    all_issues = self.project.issues.find(:all)
+    all_issues = self.project.issues.all
     return 0 if all_issues.empty?
 
-    deliverable_issues = self.project.issues.find(:all, :conditions => ["deliverable_id IN (?)", self.deliverables.collect(&:id)])
+    #deliverable_issues = self.project.issues.find(:all, :conditions => ["deliverable_id IN (?)", self.deliverables.collect(&:id)])
+    deliverable_issues = self.project.issues.where(["deliverable_id IN (?)", self.deliverables.collect(&:id)])
 
     missing_issues = all_issues - deliverable_issues
 

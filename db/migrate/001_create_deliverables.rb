@@ -1,4 +1,4 @@
-class CreateDeliverables < ActiveRecord::Migration
+class CreateDeliverables < ActiveRecord::Migration[5.2]
   def self.up
     create_table :deliverables do |t|
       t.column :subject, :string

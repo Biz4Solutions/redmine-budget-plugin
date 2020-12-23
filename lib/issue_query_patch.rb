@@ -12,7 +12,7 @@ module IssueQueryPatch
       unloadable # Send unloadable so it will not be unloaded in development
       base.add_available_column(QueryColumn.new(:deliverable_subject, :sortable => "#{Deliverable.table_name}.subject"))
       
-      alias_method_chain :initialize_available_filters, :deliverable
+      #alias_method_chain :initialize_available_filters, :deliverable
     end
 
   end

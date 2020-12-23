@@ -1,4 +1,4 @@
-class AddRateToMembers < ActiveRecord::Migration
+class AddRateToMembers < ActiveRecord::Migration[5.2]
   def self.up
     add_column :members, :rate, :decimal, :precision => 15, :scale => 2
   end

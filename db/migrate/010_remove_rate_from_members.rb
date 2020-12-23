@@ -9,7 +9,7 @@ end
 require_dependency 'user'
 require_dependency 'member'
 
-class RemoveRateFromMembers < ActiveRecord::Migration
+class RemoveRateFromMembers < ActiveRecord::Migration[5.2]
   def self.up
     self.check_that_rate_plugin_is_installed
     remove_column :members, :rate

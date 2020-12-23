@@ -177,7 +177,8 @@ class Deliverable < ActiveRecord::Base
     tracker_map = { }
     
     trackers.each do |tracker|
-      tracker_map[tracker.name] = Issue.find_all_by_tracker_id_and_project_id_and_deliverable_id(tracker.id, self.project.id, self.id).size
+      #tracker_map[tracker.name] = Issue.find_all_by_tracker_id_and_project_id_and_deliverable_id(tracker.id, self.project.id, self.id).size
+      tracker_map[tracker.name] = Issue.where("tracker_id= ? and project_id = ? and deliverable_id = ?", tracker.id, self.project.id, self.id).size
     end
 
     return tracker_map

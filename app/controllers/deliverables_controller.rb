@@ -1,7 +1,7 @@
 class DeliverablesController < ApplicationController
   unloadable
   layout 'base'
-  before_filter :find_project, :authorize, :get_settings
+  before_action :find_project, :authorize, :get_settings
 
   helper :sort
   include SortHelper
@@ -11,15 +11,11 @@ class DeliverablesController < ApplicationController
     sort_init "#{Deliverable.table_name}.id", "desc"
     sort_update 'id' => "#{Deliverable.table_name}.id"
 
-    @deliverable_count = Deliverable.count(:conditions => { :project_id => @project.id})
-    @deliverable_pages = Paginator.new self, @deliverable_count, per_page_option, params['page']
-    @deliverables = Deliverable.find(:all,
-                                     {
-                                       :conditions => { :project_id => @project.id},
-                                       :limit => per_page_option,
-                                       :offset => @deliverable_pages.current.offset
-                                     }.merge(sort_order)
-                                     )
+    @deliverable_count = Deliverable.where(["project_id = ?", @project.id]).count
+    @deliverable_pages = Paginator.new  @deliverable_count, per_page_option, params['page']
+    @deliverables = Deliverable.where(["project_id = ?", @project.id]).limit(per_page_option)
+                        .offset(@deliverable_pages.offset)
+                        .merge(sort_order)
 
     @deliverables = sort_if_needed @deliverables
 
@@ -36,18 +32,18 @@ class DeliverablesController < ApplicationController
 
   # Action to preview the Deliverable description
   def preview
-    @text = params[:deliverable][:description]
+    @text = allowed_params[:deliverable][:description]
     render :partial => 'common/preview'
   end
 
   # Saves a new Deliverable
   def create
-    if params[:deliverable][:type] == FixedDeliverable.name
-      @deliverable = FixedDeliverable.new(params[:deliverable])
-    elsif params[:deliverable][:type] == HourlyDeliverable.name
-      @deliverable = HourlyDeliverable.new(params[:deliverable])
+    if allowed_params[:deliverable][:type] == FixedDeliverable.name
+      @deliverable = FixedDeliverable.new(allowed_params[:deliverable])
+    elsif allowed_params[:deliverable][:type] == HourlyDeliverable.name
+      @deliverable = HourlyDeliverable.new(allowed_params[:deliverable])
     else
-      @deliverable = Deliverable.new(params[:deliverable])
+      @deliverable = Deliverable.new(allowed_params[:deliverable])
     end
 
     @deliverable.project = @project
@@ -66,19 +62,20 @@ class DeliverablesController < ApplicationController
 
   # Builds the edit form for the Deliverable
   def edit
-    @deliverable = Deliverable.find_by_id_and_project_id(params[:deliverable_id], @project.id)
+    #@deliverable = Deliverable.find_by_id_and_project_id(params[:deliverable_id], @project.id)
+    @deliverable = Deliverable.find_by(id: params[:deliverable_id], project_id: @project.id)
   end
 
   # Updates an existing Deliverable, optionally changing it's type
   def update
     @deliverable = Deliverable.find(params[:deliverable_id])
-
-    if params[:deliverable][:type] != @deliverable.class
-      @deliverable = @deliverable.change_type(params[:deliverable][:type])
+    #@deliverable = Deliverable.find_by(["deliverable_id= ?", allowed_params[:deliverable_id]]).first
+    if allowed_params[:deliverable][:type] != @deliverable.class
+      @deliverable = @deliverable.change_type(allowed_params[:deliverable][:type])
     end
 
     respond_to do |format|
-      if @deliverable.update_attributes(params[:deliverable])
+      if @deliverable.update_attributes(allowed_params[:deliverable])
         @flash = l(:notice_successful_create)
         format.html { redirect_to :action => 'index', :id => @project.identifier }
       else
@@ -91,11 +88,12 @@ class DeliverablesController < ApplicationController
 
   # Removes the Deliverable
   def destroy
-    @deliverable = Deliverable.find_by_id_and_project_id(params[:deliverable_id], @project.id)
+    @deliverable = Deliverable.where(["id = ? and project_id = ?", params[:deliverable_id], @project.id]).first
 
     render_404 and return unless @deliverable
     render_403 and return unless @deliverable.editable_by?(User.current)
     @deliverable.destroy
+
     flash[:notice] = l(:notice_successful_delete)
     redirect_to :action => 'index', :id => @project.identifier
   end
@@ -104,8 +102,8 @@ class DeliverablesController < ApplicationController
   def issues
     @query = IssueQuery.new(:name => "_")
     @query.project = @project
-    unless params[:deliverable_id] == 'none'
-      @query.add_filter("deliverable_id", '=', [params[:deliverable_id]])
+    unless allowed_params[:deliverable_id] == 'none'
+      @query.add_filter("deliverable_id", '=', [allowed_params[:deliverable_id]])
     else
       @query.add_filter("deliverable_id", '!*', ['']) # None
       @query.add_filter("status_id", '*', ['']) # All statuses
@@ -118,7 +116,7 @@ class DeliverablesController < ApplicationController
 
   # Assigns issues to the Deliverable based on their Version
   def bulk_assign_issues
-    @deliverable = Deliverable.find_by_id_and_project_id(params[:deliverable_id], @project.id)
+    @deliverable = Deliverable.where(["deliverable_id = ? and project_id = ?", params[:deliverable_id], @project.id])
 
     render_404 and return unless @deliverable
     render_403 and return unless @deliverable.editable_by?(User.current)
@@ -166,6 +164,19 @@ class DeliverablesController < ApplicationController
     else
       return deliverables
     end
+  end
+
+
+  def allowed_params
+      params.permit(:commit, :id, deliverable:
+                              [:subject, :description,:due, :project_manager_signoff, :client_signoff, :hidden, :type, :cost_per_hour, :total_hours,
+       :fixed_cost, :overhead, :materials, :profit, :budget]
+    )
+    #
+    #json_params = ActionController::Parameters.new( JSON.parse(request.body.read) )
+    #return json_params.require(:deliverable).permit(:deliverable, :commit, :id, :utf-8,
+    #                                                :subject, :description,:due, :project_manager_signoff, :client_signoff, :hidden, :type, :cost_per_hour, :total_hours,
+    #                                                :fixed_cost, :overhead, :materials, :profit, :budget)
   end
 
 end

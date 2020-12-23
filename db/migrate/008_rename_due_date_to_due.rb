@@ -1,10 +1,10 @@
-class RenameDueDateToDue < ActiveRecord::Migration
+class RenameDueDateToDue < ActiveRecord::Migration[5.2]
   def self.up
     add_column :deliverables, :due, :date
     
     Deliverable.reset_column_information
     
-    Deliverable.find(:all).each do |deliverable|
+    Deliverable.find_each do |deliverable|
       deliverable.update_attribute(:due, deliverable.due_date)
     end
     
@@ -16,7 +16,7 @@ class RenameDueDateToDue < ActiveRecord::Migration
     
     Deliverable.reset_column_information
     
-    Deliverable.find(:all).each do |deliverable|
+    Deliverable.find_each do |deliverable|
       deliverable.update_attribute(:due_date, deliverable.due)
     end
     

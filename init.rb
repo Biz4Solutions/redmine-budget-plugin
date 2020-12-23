@@ -12,7 +12,7 @@ end
 require 'issue_patch'
 require 'issue_query_patch'
 require 'time_report_patch'
-ActionDispatch::Callbacks.to_prepare do
+ActiveSupport::Reloader.to_prepare do
   Issue.send(:include, IssuePatch) unless Issue.included_modules.include? IssuePatch
   IssueQuery.send(:include, IssueQueryPatch) unless IssueQuery.included_modules.include? IssueQueryPatch
   Redmine::Helpers::TimeReport.send(:include, TimeReportPatch) unless Redmine::Helpers::TimeReport.included_modules.include? TimeReportPatch

@@ -1,4 +1,4 @@
-class AddDataFieldsToDeliverablesForCalculations < ActiveRecord::Migration
+class AddDataFieldsToDeliverablesForCalculations < ActiveRecord::Migration[5.2]
   def self.up
     add_column :deliverables, :overhead, :decimal, :precision => 15, :scale => 2
     add_column :deliverables, :materials, :decimal, :precision => 15, :scale => 2
